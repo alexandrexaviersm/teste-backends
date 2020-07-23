@@ -1,4 +1,7 @@
 defmodule Proposal.Deleted do
+  @moduledoc """
+  Proposal.Deleted Schema
+  """
   @type event_id :: String.t()
   @type event_schema :: atom()
   @type event_action :: atom()

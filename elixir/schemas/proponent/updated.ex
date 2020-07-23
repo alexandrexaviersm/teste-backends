@@ -1,4 +1,7 @@
-defmodule Proponent.Added do
+defmodule Proponent.Updated do
+  @moduledoc """
+  Proponent.Updated
+  """
   @type event_id :: String.t()
   @type event_schema :: atom()
   @type event_action :: atom()
@@ -20,6 +23,6 @@ defmodule Proponent.Added do
     :proponent_monthly_income,
     :proponent_is_main,
     event_schema: :proponent,
-    event_action: :added
+    event_action: :updated
   ]
 end

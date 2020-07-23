@@ -1,4 +1,7 @@
 defmodule Proposal.Created do
+  @moduledoc """
+  Proposal.Created Schema
+  """
   @type event_id :: String.t()
   @type event_schema :: atom()
   @type event_action :: atom()

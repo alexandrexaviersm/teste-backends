@@ -1,4 +1,7 @@
 defmodule Validations do
+  @moduledoc """
+
+  """
   def validate_value_of_proposal_loan(%ProposalModel{proposal_loan_value: proposal_loan_value}) do
     proposal_loan_value >= 30_000.0 && proposal_loan_value <= 3_000_000.0
   end

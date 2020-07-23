@@ -1,4 +1,7 @@
 defmodule Warranty.Removed do
+  @moduledoc """
+  Warranty.Removed Schema
+  """
   @type event_id :: String.t()
   @type event_schema :: atom()
   @type event_action :: atom()

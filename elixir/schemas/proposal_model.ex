@@ -5,7 +5,7 @@ defmodule ProposalModel do
   @type proposal_id :: String.t()
   @type proposal_loan_value :: float()
   @type proposal_number_of_monthly_installments :: integer()
-  @type events :: list()
+  @type events_received :: list()
   @type proponents :: list()
   @type warranties :: list()
 
@@ -13,7 +13,7 @@ defmodule ProposalModel do
     :proposal_id,
     :proposal_loan_value,
     :proposal_number_of_monthly_installments,
-    :events,
+    :events_received,
     proponents: [],
     warranties: []
   ]

@@ -1,6 +1,6 @@
 defmodule Proposal.Updated do
   @moduledoc """
-
+  Proposal.Updated Schema
   """
   @type event_id :: String.t()
   @type event_schema :: atom()

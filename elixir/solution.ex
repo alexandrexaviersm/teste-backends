@@ -1,5 +1,8 @@
 Code.require_file("./schemas/proposal_model.ex")
+Code.require_file("./proposals.ex")
+Code.require_file("./proponents.ex")
 Code.require_file("./validations.ex")
+Code.require_file("./warranties.ex")
 
 Path.wildcard("schemas/*/*.ex")
 |> Enum.map(&Code.require_file/1)
@@ -35,7 +38,7 @@ defmodule Solution do
 
         case existing_proposal_event do
           nil ->
-            create_proposal_model(proposal_model_list, event_struct)
+            Proposals.create_proposal_model(proposal_model_list, event_struct)
 
           # antes de colocar na lista
           _ ->
@@ -50,8 +53,6 @@ defmodule Solution do
               existing_proposal_event,
               event_struct
             )
-
-            # warranty_removed
         end
       end)
 
@@ -166,102 +167,19 @@ defmodule Solution do
     }
   end
 
-  defp mount_attrs_to_validate(event_struct) do
-    case event_struct do
-      %Proposal.Created{} ->
-        %{
-          proposal_loan_value: event_struct.proposal_loan_value,
-          proposal_number_of_monthly_installments:
-            event_struct.proposal_number_of_monthly_installments
-        }
-
-      %Warranty.Added{} ->
-        %{
-          warranty_value: event_struct.warranty_value,
-          warranty_province: event_struct.warranty_province
-        }
-
-      %Proponent.Added{} ->
-        %{
-          proponent_age: event_struct.proponent_age,
-          proponent_monthly_income: event_struct.proponent_monthly_income,
-          proponent_is_main: event_struct.proponent_is_main
-        }
-
-      _ ->
-        %{}
-    end
-  end
-
-  defp create_proposal_model(proposal_model_list, event_struct) do
-    proposal_model = %ProposalModel{
-      proposal_id: event_struct.proposal_id,
-      events: [event_struct]
-    }
-
-    event_attrs_to_validate = mount_attrs_to_validate(event_struct)
-
-    updated_proposal_model =
-      merge_event_attrs_in_proposal_model(proposal_model, event_attrs_to_validate)
-
-    [updated_proposal_model | proposal_model_list]
-  end
-
-  @doc """
-  Property Warranties of the states PR, SC and RS aren't accepted
-  """
   defp merge_or_reject_event_of_existing_proposal(
          proposal_model_list,
-         _existing_proposal_event,
-         %Warranty.Added{
-           warranty_province: warranty_province
-         }
-       )
-       when warranty_province in ~w(PR SC RS) do
-    proposal_model_list
+         existing_proposal_event,
+         %{event_schema: :warranty} = event_struct
+       ) do
+    Warranties.handle_event(proposal_model_list, existing_proposal_event, event_struct)
   end
 
   defp merge_or_reject_event_of_existing_proposal(
          proposal_model_list,
          existing_proposal_event,
-         %Warranty.Added{} = event_struct
+         %{event_schema: :proponent} = event_struct
        ) do
-    event_attrs_to_validate = mount_attrs_to_validate(event_struct)
-
-    prepare_attrs = %{
-      warranties: existing_proposal_event.warranties ++ [event_attrs_to_validate],
-      events: existing_proposal_event.events ++ [event_struct]
-    }
-
-    updated_proposal_model =
-      merge_event_attrs_in_proposal_model(existing_proposal_event, prepare_attrs)
-
-    updated_proposal_model_list = List.delete(proposal_model_list, existing_proposal_event)
-
-    [updated_proposal_model | updated_proposal_model_list]
-  end
-
-  defp merge_or_reject_event_of_existing_proposal(
-         proposal_model_list,
-         existing_proposal_event,
-         %Proponent.Added{} = event_struct
-       ) do
-    event_attrs_to_validate = mount_attrs_to_validate(event_struct)
-
-    prepare_attrs = %{
-      proponents: existing_proposal_event.proponents ++ [event_attrs_to_validate],
-      events: existing_proposal_event.events ++ [event_struct]
-    }
-
-    updated_proposal_model =
-      merge_event_attrs_in_proposal_model(existing_proposal_event, prepare_attrs)
-
-    updated_proposal_model_list = List.delete(proposal_model_list, existing_proposal_event)
-
-    [updated_proposal_model | updated_proposal_model_list]
-  end
-
-  defp merge_event_attrs_in_proposal_model(proposal_model, event_attrs_to_validate) do
-    Map.merge(proposal_model, event_attrs_to_validate)
+    Proponents.handle_event(proposal_model_list, existing_proposal_event, event_struct)
   end
 end
