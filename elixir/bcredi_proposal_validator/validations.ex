@@ -13,7 +13,9 @@ defmodule Validations do
            true <- validate_proponents_age(proposal_model),
            true <- validate_has_at_least_one_warranty(proposal_model),
            true <- validate_warranties_values(proposal_model),
-           true <- validate_main_proponent_monthly_income(proposal_model) do
+           true <- validate_state_of_warranties(proposal_model),
+           true <-
+             validate_main_proponent_monthly_income(proposal_model) do
         proposal_model.proposal_id
       else
         _ -> false
@@ -65,7 +67,7 @@ defmodule Validations do
   There must be at least 1 warranty per proposal
   """
   def validate_has_at_least_one_warranty(%ProposalModel{warranties: warranties}) do
-    length(warranties) >= 2
+    length(warranties) >= 1
   end
 
   @doc """
@@ -82,6 +84,15 @@ defmodule Validations do
 
     sum_of_warranties_values >=
       proposal_loan_value * 2
+  end
+
+  @doc """
+  Property Warranties of the states PR, SC and RS aren't accepted
+  """
+  def validate_state_of_warranties(%ProposalModel{
+        warranties: warranties
+      }) do
+    Enum.find(warranties, fn warranty -> warranty.warranty_province in ~w(PR SC RS) end) |> is_nil
   end
 
   @doc """

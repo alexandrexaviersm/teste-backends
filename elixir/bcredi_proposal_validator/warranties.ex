@@ -6,20 +6,6 @@ defmodule Warranties do
   Warranties Public API
   """
 
-  @doc """
-  Property Warranties of the states PR, SC and RS aren't accepted
-  """
-  def handle_event(
-        proposal_model_list,
-        _existing_proposal_event,
-        %Warranty.Added{
-          warranty_province: warranty_province
-        }
-      )
-      when warranty_province in ~w(PR SC RS) do
-    proposal_model_list
-  end
-
   def handle_event(
         proposal_model_list,
         existing_proposal_event,
