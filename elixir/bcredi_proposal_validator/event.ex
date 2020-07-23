@@ -1,8 +1,8 @@
-Code.require_file("./proponents.ex")
-Code.require_file("./proposals.ex")
-Code.require_file("./warranties.ex")
+Code.require_file("./bcredi_proposal_validator/proponents.ex")
+Code.require_file("./bcredi_proposal_validator/proposals.ex")
+Code.require_file("./bcredi_proposal_validator/warranties.ex")
 
-Path.wildcard("schemas/*/*.ex")
+Path.wildcard("./bcredi_proposal_validator/schemas/*/*.ex")
 |> Enum.map(&Code.require_file/1)
 
 defmodule Event do

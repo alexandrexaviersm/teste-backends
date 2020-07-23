@@ -1,4 +1,4 @@
-Code.require_file("./schemas/proposal_model.ex")
+Code.require_file("./bcredi_proposal_validator/schemas/proposal_model.ex")
 
 defmodule Validations do
   @moduledoc """

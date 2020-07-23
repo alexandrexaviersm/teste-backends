@@ -1,5 +1,5 @@
-Code.require_file("./event.ex")
-Code.require_file("./validations.ex")
+Code.require_file("./bcredi_proposal_validator/event.ex")
+Code.require_file("./bcredi_proposal_validator/validations.ex")
 
 defmodule Solution do
   @moduledoc """
