@@ -1,11 +1,5 @@
-Code.require_file("./schemas/proposal_model.ex")
-Code.require_file("./proposals.ex")
-Code.require_file("./proponents.ex")
+Code.require_file("./event.ex")
 Code.require_file("./validations.ex")
-Code.require_file("./warranties.ex")
-
-Path.wildcard("schemas/*/*.ex")
-|> Enum.map(&Code.require_file/1)
 
 defmodule Solution do
   @moduledoc """
@@ -25,161 +19,32 @@ defmodule Solution do
   def process_messages(events) do
     proposal_models =
       Enum.reduce(events, [], fn event, proposal_model_list ->
-        event_attrs = String.split(event, ",")
-        event_schema = Enum.at(event_attrs, 1)
-        event_action = Enum.at(event_attrs, 2)
-
-        event_struct = create_event_struct(event_schema, event_action, event_attrs)
+        event_struct =
+          generate_event_attrs(event)
+          |> Event.mount_event_in_struct()
 
         existing_proposal_event =
-          Enum.find(proposal_model_list, fn proposal_model ->
-            proposal_model.proposal_id == event_struct.proposal_id
-          end)
+          Enum.find(proposal_model_list, &(&1.proposal_id == event_struct.proposal_id))
 
-        case existing_proposal_event do
-          nil ->
-            Proposals.create_proposal_model(proposal_model_list, event_struct)
-
-          # antes de colocar na lista
-          _ ->
-            # Em caso de eventos repetidos, considere o primeiro evento
-            # Por exemplo, ao receber o evento ID 1 e novamente o mesmo evento, descarte o segundo evento
-
-            # Em caso de eventos atrasados, considere sempre o evento mais novo
-            # Por exemplo, ao receber dois eventos de atualização com IDs diferentes, porém o último evento tem um timestamp mais antigo do que o primeiro, descarte o evento mais antigo
-
-            merge_or_reject_event_of_existing_proposal(
-              proposal_model_list,
-              existing_proposal_event,
-              event_struct
-            )
-        end
+        Event.create_proposal_model_or_merge_event(
+          existing_proposal_event,
+          proposal_model_list,
+          event_struct
+        )
       end)
 
-    valid_proposals_ids =
-      Enum.map(proposal_models, fn proposal_model ->
-        with true <- Validations.validate_value_of_proposal_loan(proposal_model),
-             true <- Validations.validate_number_of_monthly_installments(proposal_model),
-             true <- Validations.validate_minimum_number_of_proponents(proposal_model),
-             true <- Validations.validate_has_one_main_proponent(proposal_model),
-             true <- Validations.validate_proponents_age(proposal_model),
-             true <- Validations.validate_has_at_least_one_warranty(proposal_model),
-             true <- Validations.validate_warranties_values(proposal_model),
-             true <- Validations.validate_main_proponent_monthly_income(proposal_model) do
-          proposal_model.proposal_id
-        end
-      end)
-
-    valid_proposals_ids |> Enum.filter(& &1) |> Enum.reverse() |> Enum.join(",")
+    proposal_models
+    |> Validations.check_for_valid_proposals()
+    |> Enum.filter(& &1)
+    |> Enum.reverse()
+    |> Enum.join(",")
   end
 
-  defp create_event_struct("proposal", "created", event) do
-    %Proposal.Created{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      proposal_loan_value: Enum.at(event, 5) |> String.to_float(),
-      proposal_number_of_monthly_installments: Enum.at(event, 6) |> String.to_integer()
-    }
-  end
+  defp generate_event_attrs(event) do
+    event_attrs = String.split(event, ",")
+    event_schema = Enum.at(event_attrs, 1)
+    event_action = Enum.at(event_attrs, 2)
 
-  defp create_event_struct("proposal", "updated", event) do
-    %Proposal.Updated{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      proposal_loan_value: Enum.at(event, 5) |> String.to_float(),
-      proposal_number_of_monthly_installments: Enum.at(event, 6) |> String.to_integer()
-    }
-  end
-
-  defp create_event_struct("proposal", "deleted", event) do
-    %Proposal.Deleted{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4)
-    }
-  end
-
-  defp create_event_struct("warranty", "added", event) do
-    %Warranty.Added{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      warranty_id: Enum.at(event, 5),
-      warranty_value: Enum.at(event, 6) |> String.to_float(),
-      warranty_province: Enum.at(event, 7)
-    }
-  end
-
-  defp create_event_struct("warranty", "updated", event) do
-    %Warranty.Updated{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      warranty_id: Enum.at(event, 5),
-      warranty_value: Enum.at(event, 6) |> String.to_float(),
-      warranty_province: Enum.at(event, 7)
-    }
-  end
-
-  defp create_event_struct("warranty", "removed", event) do
-    %Warranty.Removed{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      warranty_id: Enum.at(event, 5)
-    }
-  end
-
-  defp create_event_struct("proponent", "added", event) do
-    %Proponent.Added{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      proponent_id: Enum.at(event, 5),
-      proponent_name: Enum.at(event, 6),
-      proponent_age: Enum.at(event, 7) |> String.to_integer(),
-      proponent_monthly_income: Enum.at(event, 8) |> String.to_float(),
-      proponent_is_main: Enum.at(event, 9) |> String.to_atom()
-    }
-  end
-
-  defp create_event_struct("proponent", "updated", event) do
-    %Proponent.Updated{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      proponent_id: Enum.at(event, 5),
-      proponent_name: Enum.at(event, 6),
-      proponent_age: Enum.at(event, 7) |> String.to_integer(),
-      proponent_monthly_income: Enum.at(event, 8) |> String.to_float(),
-      proponent_is_main: Enum.at(event, 9) |> String.to_atom()
-    }
-  end
-
-  defp create_event_struct("proponent", "removed", event) do
-    %Proponent.Removed{
-      event_id: Enum.at(event, 0),
-      event_timestamp: Enum.at(event, 3),
-      proposal_id: Enum.at(event, 4),
-      proponent_id: Enum.at(event, 5)
-    }
-  end
-
-  defp merge_or_reject_event_of_existing_proposal(
-         proposal_model_list,
-         existing_proposal_event,
-         %{event_schema: :warranty} = event_struct
-       ) do
-    Warranties.handle_event(proposal_model_list, existing_proposal_event, event_struct)
-  end
-
-  defp merge_or_reject_event_of_existing_proposal(
-         proposal_model_list,
-         existing_proposal_event,
-         %{event_schema: :proponent} = event_struct
-       ) do
-    Proponents.handle_event(proposal_model_list, existing_proposal_event, event_struct)
+    %{event_schema: event_schema, event_action: event_action, event_attrs: event_attrs}
   end
 end

@@ -18,15 +18,14 @@ defmodule Proposals do
     [updated_proposal_model | proposal_model_list]
   end
 
-  defp mount_attrs_to_validate(event_struct) do
-    %{
+  defp merge_event_attrs_in_proposal_model(proposal_model, event_attrs_to_validate) do
+    Map.merge(proposal_model, event_attrs_to_validate)
+  end
+
+  defp mount_attrs_to_validate(event_struct),
+    do: %{
       proposal_loan_value: event_struct.proposal_loan_value,
       proposal_number_of_monthly_installments:
         event_struct.proposal_number_of_monthly_installments
     }
-  end
-
-  defp merge_event_attrs_in_proposal_model(proposal_model, event_attrs_to_validate) do
-    Map.merge(proposal_model, event_attrs_to_validate)
-  end
 end
