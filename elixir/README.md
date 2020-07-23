@@ -1,6 +1,6 @@
 # Teste de Back-end Bcredi
 ## Elixir
-Desafio em Elixir concluído. Arquivo `solution.ex` editado. Os testes rodam a partir do arquivo `solution_test.ex` e a suíte de testes estão no diretório test_suite.
+Desafio em Elixir concluído. Os testes rodam a partir do arquivo `solution_test.ex` e os testes das regras de validações estão no diretório test_suite.
 
 Para testar a solução, rode:
 
@@ -13,5 +13,5 @@ Para executar a suíte de testes, rode:
 
 ```
 # você precisa estar no diretório /teste-backends/elixir!
-elixir ./test_suite/test_suite.exs
+elixir ./test_suite/validations_test.exs
 ```

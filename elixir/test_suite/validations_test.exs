@@ -6,10 +6,6 @@ defmodule ValidationsTest do
   use ExUnit.Case, async: true
 
   setup :valid_proposal_model
-  setup :invalid_proposal_model
-
-  describe "Check for valid proposals" do
-  end
 
   describe "Value of a proposal loan" do
     test "should return true for a proposal with a loan amount bigger than 30_000", %{
@@ -29,7 +25,7 @@ defmodule ValidationsTest do
     end
 
     test "should return false for a proposal with a loan amount less than 30_000", %{
-      invalid_proposal_model: proposal_model
+      valid_proposal_model: proposal_model
     } do
       attrs = %{proposal_model | proposal_loan_value: 20_000}
 
@@ -37,7 +33,7 @@ defmodule ValidationsTest do
     end
 
     test "should return false for a proposal with a loan amount bigger than 3_000_000", %{
-      invalid_proposal_model: proposal_model
+      valid_proposal_model: proposal_model
     } do
       attrs = %{proposal_model | proposal_loan_value: 5_000_000}
 
@@ -247,12 +243,6 @@ defmodule ValidationsTest do
     end
   end
 
-  @doc """
-  The monthly income of main proponent must be at least:
-    - 4 times the loan installment amount, if his age is between 18 and 24 years old
-    - 3 times the loan installment amount, if his age is between 24 and 50 years old
-    - 2 times the loan installment amount, if his age is over 50 years old
-  """
   describe "Monthly income of main proponent" do
     test "should return true if monthly income of main proponent is 4 times the loan installment" do
       attrs = %ProposalModel{
@@ -362,42 +352,6 @@ defmodule ValidationsTest do
       valid_proposal_model: %ProposalModel{
         proposal_id: "52f0b3f2-f838-4ce2-96ee-9876dd2c0cf6",
         proposal_loan_value: 2_689_584.0,
-        proposal_number_of_monthly_installments: 72,
-        proponents: [
-          %{
-            proponent_id: "ba343064-6f41-419d-a455-8cbdcbc807b1",
-            proponent_age: 55,
-            proponent_monthly_income: 365_997.74,
-            proponent_is_main: true
-          },
-          %{
-            proponent_id: "a1c5ca74-e7e7-4f1e-9ee9-2f03ee1c4612",
-            proponent_age: 51,
-            proponent_monthly_income: 192_567.32,
-            proponent_is_main: false
-          }
-        ],
-        warranties: [
-          %{
-            warranty_id: "2aa5f044-552f-444b-b213-eb3892bdc140",
-            warranty_value: 6_955_365.82,
-            warranty_province: "GO"
-          },
-          %{
-            warranty_id: "2a6eba4f-5109-41fd-b977-87b1156d7a05",
-            warranty_value: 6_718_669.33,
-            warranty_province: "ES"
-          }
-        ]
-      }
-    ]
-  end
-
-  def invalid_proposal_model(_context) do
-    [
-      invalid_proposal_model: %ProposalModel{
-        proposal_id: "52f0b3f2-f838-4ce2-96ee-9876dd2c0cf6",
-        proposal_loan_value: 1_000.0,
         proposal_number_of_monthly_installments: 72,
         proponents: [
           %{
