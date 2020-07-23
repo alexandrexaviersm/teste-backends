@@ -35,6 +35,40 @@ defmodule Warranties do
   def handle_event(
         proposal_model_list,
         existing_proposal_event,
+        %Warranty.Updated{} = event_struct
+      ) do
+    case check_repeated_events(existing_proposal_event, event_struct) do
+      nil ->
+        warranties =
+          Enum.reject(existing_proposal_event.warranties, fn warranty ->
+            warranty.warranty_id == event_struct.warranty_id
+          end)
+
+        updated_proposal_model =
+          merge_event_attrs_in_proposal_model(existing_proposal_event, %{warranties: warranties})
+
+        event_attrs_to_validate = mount_attrs_to_validate(event_struct)
+
+        prepare_attrs = %{
+          warranties: updated_proposal_model.warranties ++ [event_attrs_to_validate],
+          events_received: updated_proposal_model.events_received ++ [event_struct]
+        }
+
+        updated_proposal_model =
+          merge_event_attrs_in_proposal_model(existing_proposal_event, prepare_attrs)
+
+        updated_proposal_model_list = List.delete(proposal_model_list, existing_proposal_event)
+
+        [updated_proposal_model | updated_proposal_model_list]
+
+      _ ->
+        proposal_model_list
+    end
+  end
+
+  def handle_event(
+        proposal_model_list,
+        existing_proposal_event,
         %Warranty.Removed{} = event_struct
       ) do
     case check_repeated_events(existing_proposal_event, event_struct) do

@@ -66,6 +66,30 @@ defmodule Proponents do
     end
   end
 
+  def handle_event(
+        proposal_model_list,
+        existing_proposal_event,
+        %Proponent.Removed{} = event_struct
+      ) do
+    case check_repeated_events(existing_proposal_event, event_struct) do
+      nil ->
+        proponents =
+          Enum.reject(existing_proposal_event.proponents, fn proponent_id ->
+            proponent_id.proponent_id == event_struct.proponent_id
+          end)
+
+        updated_proposal_model =
+          merge_event_attrs_in_proposal_model(existing_proposal_event, %{proponents: proponents})
+
+        updated_proposal_model_list = List.delete(proposal_model_list, existing_proposal_event)
+
+        [updated_proposal_model | updated_proposal_model_list]
+
+      _ ->
+        proposal_model_list
+    end
+  end
+
   defp check_repeated_events(%{events_received: events_received}, %{event_id: event_id}) do
     Enum.find(events_received, &(&1.event_id == event_id))
   end
